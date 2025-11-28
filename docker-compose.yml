@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  substrate-node:
+    image: paritytech/substrate-contracts-node:latest
+    command: --dev --rpc-external --rpc-cors all
+    ports:
+      - "9944:9944"
+      - "9933:9933"
+      - "30333:30333"
+    networks:
+      - goldchain-network
+
+  goldchain-backend:
+    build: .
+    depends_on:
+      - substrate-node
+    environment:
+      - RPC_URL=ws://substrate-node:9944
+    ports:
+      - "3000:3000"
+    networks:
+      - goldchain-network
+
+networks:
+  goldchain-network:
+    driver: bridge

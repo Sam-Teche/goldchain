@@ -1,0 +1,278 @@
+# services:
+#   server:
+#     build:
+#       context: .
+#     environment:
+#       NODE_ENV: ${NODE_ENV}
+#       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+#       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+#       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+#       MONGO_HOST: goldchain-mongo
+#       MONGO_PORT: ${MONGO_PORT}
+#       MONGO_CONNECTION_STRING: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@goldchain-mongo:${MONGO_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin
+#       COOKIE_SECRET: ${COOKIE_SECRET}
+#       COOKIE_EXPIRES: ${COOKIE_EXPIRES}
+#       COOKIE_EXPIRES_STAY: ${COOKIE_EXPIRES_STAY}
+#       JWT_SECRET: ${JWT_SECRET}
+#       JWT_EXPIRES: ${JWT_EXPIRES}
+#       JWT_EXPIRES_STAY: ${JWT_EXPIRES_STAY}
+#       VERIFY_EMAIL_URL: ${VERIFY_EMAIL_URL}
+#       RESET_PASSWORD_URL: ${RESET_PASSWORD_URL}
+#       PORT: ${PORT}
+#       URL: ${URL}
+#       ONLINE_URL: ${ONLINE_URL}
+#       CLIENT_LOGIN_URL: ${CLIENT_LOGIN_URL}
+#       CLIENT_ORIGIN_1: ${CLIENT_ORIGIN_1}
+#       CLIENT_ORIGIN_2: ${CLIENT_ORIGIN_2}
+#       CLIENT_ORIGIN_3: ${CLIENT_ORIGIN_3}
+#       CLIENT_ORIGIN_4: ${CLIENT_ORIGIN_4}
+#       CLIENT_ORIGIN_5: ${CLIENT_ORIGIN_5}
+#       CLIENT_ORIGIN_6: ${CLIENT_ORIGIN_6}
+#       CLIENT_ORIGIN_7: ${CLIENT_ORIGIN_7}
+#       CLIENT_ORIGIN_8: ${CLIENT_ORIGIN_8}
+#       CLIENT_ORIGIN_9: ${CLIENT_ORIGIN_9}
+#       CLIENT_ORIGIN_10: ${CLIENT_ORIGIN_10}
+#       SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
+#       SMTP_HOST: ${SMTP_HOST}
+#       SMTP_PORT: ${SMTP_PORT}
+#       SMTP_PASSWORD: ${SMTP_PASSWORD}
+#       SMTP_USERNAME: ${SMTP_USERNAME}
+#       SUPPORT_EMAIL: ${SUPPORT_EMAIL}
+#       NGROK_AUTH_TOKEN: ${NGROK_AUTH_TOKEN}
+#       AWS_REGION: ${AWS_REGION}
+#       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+#       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+#       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+#       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+#       SUPER_ADMIN: ${SUPER_ADMIN}
+#       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
+#       CANCEL_URL: ${CANCEL_URL}
+#       STRIPE_SECRET: ${STRIPE_SECRET}
+#       WEBHOOK_STRIPE_SECRET: ${WEBHOOK_STRIPE_SECRET}
+#       SUCCESS_URL: ${SUCCESS_URL}
+#       ESCROW_EMAIL: ${ESCROW_EMAIL}
+#       ESCROW_API_KEY: ${ESCROW_API_KEY}
+#       ESCROW_API_URL: ${ESCROW_API_URL}
+#       ESCROW_SANDBOX_API_KEY: ${ESCROW_SANDBOX_API_KEY}
+#       ESCROW_SANDBOX_API_URL: ${ESCROW_SANDBOX_API_URL}
+#       FINN_HUB_API_KEY: ${FINN_HUB_API_KEY}
+#       FINN_HUB_API_URL: ${FINN_HUB_API_URL}
+#     ports:
+#       - 1364:1364
+#     networks:
+#       - goldchain
+#     depends_on:
+#       - goldchain-mongo
+
+
+#   goldchain-mongo:
+#     image: mongo:latest
+#     container_name: goldchain_mongo_db
+#     environment:
+#       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+#       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-password123}
+#       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-mydatabase}
+#     volumes:
+#       - mongo_data:/data/db
+#     ports:
+#       - "${MONGO_PORT:-27017}:27017"
+#     restart: unless-stopped
+#     healthcheck:
+#       test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#       start_period: 10s
+#     networks:
+#       - goldchain
+
+  
+#   ngrok:
+#     image: ngrok/ngrok:latest
+#     environment:
+#       NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN}
+#     command: 'http --domain=monkfish-organic-viper.ngrok-free.app --host-header=rewrite host.docker.internal:1364'
+#     ports:
+#       - '4041:4040'
+#     expose:
+#       - '4040'
+#     restart: unless-stopped
+
+# volumes:
+#   mongo_data:
+#     driver: local
+
+# networks:
+#   goldchain:
+#     driver: bridge
+
+
+
+version: '3.8'
+
+services:
+  # Substrate Blockchain Node (using general Substrate image)
+  substrate-node:
+    image: parity/substrate:latest
+    container_name: goldchain_substrate_node  
+    command: --dev --rpc-external --rpc-cors all --unsafe-rpc-external --unsafe-ws-external
+    ports:
+      - "9944:9944"   # WebSocket RPC
+      - "9933:9933"   # HTTP RPC
+      - "30333:30333" # P2P
+    networks:
+      - goldchain
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -H 'Content-Type: application/json' -d '{\"id\":1, \"jsonrpc\":\"2.0\", \"method\": \"system_health\"}' http://localhost:9933/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # MongoDB Database
+  goldchain-mongo:
+    image: mongo:latest
+    container_name: goldchain_mongo_db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-goldchain}
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    networks:
+      - goldchain
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Backend Server
+  server:
+    build:
+      context: .
+    container_name: goldchain_backend
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      
+      # MongoDB Configuration
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_HOST: goldchain-mongo
+      MONGO_PORT: ${MONGO_PORT}
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@goldchain-mongo:${MONGO_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin
+      
+      # Substrate/Polkadot RPC
+      RPC_URL: ws://substrate-node:9944
+      
+      # Security
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      COOKIE_EXPIRES: ${COOKIE_EXPIRES}
+      COOKIE_EXPIRES_STAY: ${COOKIE_EXPIRES_STAY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES: ${JWT_EXPIRES}
+      JWT_EXPIRES_STAY: ${JWT_EXPIRES_STAY}
+      
+      # URLs
+      VERIFY_EMAIL_URL: ${VERIFY_EMAIL_URL}
+      RESET_PASSWORD_URL: ${RESET_PASSWORD_URL}
+      PORT: ${PORT}
+      URL: ${URL}
+      ONLINE_URL: ${ONLINE_URL}
+      CLIENT_LOGIN_URL: ${CLIENT_LOGIN_URL}
+      
+      # CORS Origins
+      CLIENT_ORIGIN_1: ${CLIENT_ORIGIN_1}
+      CLIENT_ORIGIN_2: ${CLIENT_ORIGIN_2}
+      CLIENT_ORIGIN_3: ${CLIENT_ORIGIN_3}
+      CLIENT_ORIGIN_4: ${CLIENT_ORIGIN_4}
+      CLIENT_ORIGIN_5: ${CLIENT_ORIGIN_5}
+      CLIENT_ORIGIN_6: ${CLIENT_ORIGIN_6}
+      CLIENT_ORIGIN_7: ${CLIENT_ORIGIN_7}
+      CLIENT_ORIGIN_8: ${CLIENT_ORIGIN_8}
+      CLIENT_ORIGIN_9: ${CLIENT_ORIGIN_9}
+      CLIENT_ORIGIN_10: ${CLIENT_ORIGIN_10}
+      
+      # Email/SMTP
+      SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL}
+      
+      # Ngrok
+      NGROK_AUTH_TOKEN: ${NGROK_AUTH_TOKEN}
+      
+      # AWS S3
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      
+      # Admin
+      SUPER_ADMIN: ${SUPER_ADMIN}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
+      
+      # Payments
+      CANCEL_URL: ${CANCEL_URL}
+      STRIPE_SECRET: ${STRIPE_SECRET}
+      WEBHOOK_STRIPE_SECRET: ${WEBHOOK_STRIPE_SECRET}
+      SUCCESS_URL: ${SUCCESS_URL}
+      
+      # Escrow
+      ESCROW_EMAIL: ${ESCROW_EMAIL}
+      ESCROW_API_KEY: ${ESCROW_API_KEY}
+      ESCROW_API_URL: ${ESCROW_API_URL}
+      ESCROW_SANDBOX_API_KEY: ${ESCROW_SANDBOX_API_KEY}
+      ESCROW_SANDBOX_API_URL: ${ESCROW_SANDBOX_API_URL}
+      
+      # Market Data
+      FINN_HUB_API_KEY: ${FINN_HUB_API_KEY}
+      FINN_HUB_API_URL: ${FINN_HUB_API_URL}
+      
+      # Misc
+      BP: ${BP}
+      
+    ports:
+      - "1364:1364"
+    networks:
+      - goldchain
+    depends_on:
+      # substrate-node:
+      #   condition: service_healthy
+      goldchain-mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Ngrok Tunnel (Optional - only if you need external access)
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: goldchain_ngrok
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN}
+    command: 'http --domain=monkfish-organic-viper.ngrok-free.app --host-header=rewrite server:1364'
+    ports:
+      - '4040:4040'
+    networks:
+      - goldchain
+    depends_on:
+      - server
+    restart: unless-stopped
+    profiles:
+      - ngrok  # Only starts if you run: docker-compose --profile ngrok up
+
+volumes:
+  mongo_data:
+    driver: local
+
+networks:
+  goldchain:
+    driver: bridge
