@@ -8,14 +8,8 @@ function timeoutPromise(ms: number) {
 }
 
 async function testPolkadotBlockchain() {
-  const env = {
-    Polkadot: {
-      rpcURL: "ws://localhost:9944",
-      secretKeyMnemonic:
-        "bottom drive obey lake curtain smoke basket hold race lonely fit walk",
-      contractAddress: "5HGv7RcomxbWKyoJf4ua2KtCcECe4uyXn1nQF6WnA2EcJLGh",
-    },
-  } as Environment;
+  // Load environment variables from .env file
+  const env = new Environment();
 
   const blockchain = new PolkadotBlockchainClass(env);
 
