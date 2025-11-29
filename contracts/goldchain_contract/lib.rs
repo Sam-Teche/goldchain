@@ -1,13 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 use ink::prelude::string::String;
+use ink::prelude::vec::Vec;
 use ink::storage::Mapping;
 
 #[ink::contract]
 pub mod goldchain_sc {
     use super::*;
 
-    /// Config struct - stores admin address
     #[derive(scale::Encode, scale::Decode, Clone, Debug, PartialEq, Eq)]
     #[cfg_attr(
         feature = "std",
@@ -17,7 +17,6 @@ pub mod goldchain_sc {
         pub admin: AccountId,
     }
 
-    /// Ledger struct - stores tracking data
     #[derive(scale::Encode, scale::Decode, Clone, Debug, PartialEq, Eq)]
     #[cfg_attr(
         feature = "std",
@@ -26,30 +25,25 @@ pub mod goldchain_sc {
     pub struct Ledger {
         pub tracking_id: String,
         pub lot_id: String,
-        pub recorded_at: u64,  // ← FIXED: Changed from i64 to u64
+        pub recorded_at: u64,  
     }
 
     #[ink(storage)]
     pub struct GoldchainSc {
-        /// Config account (like Solana's PDA config)
+  
         config: Option<Config>,
-        /// Ledgers mapping: key -> Ledger
+
         ledgers: Mapping<[u8; 32], Ledger>,
+        ledger_keys: Vec<[u8; 32]>,
     }
 
-    /// Error types
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
-        /// Caller is not the required authority
         UnauthorizedAuthority,
-        /// Contract already initialized
         AlreadyInitialized,
-        /// Contract not initialized
         NotInitialized,
-        /// Ledger already exists (matches Solana's PDA behavior)
         LedgerAlreadyExists,
-        /// String exceeds maximum length of 256 characters
         StringTooLong,
     }
 
@@ -60,17 +54,16 @@ pub mod goldchain_sc {
     }
 
     impl GoldchainSc {
-        /// Constructor - creates empty contract (not initialized yet)
         #[ink(constructor)]
         pub fn new() -> Self {
             Self {
                 config: None,
                 ledgers: Mapping::default(),
+                 ledger_keys: Vec::new(),
             }
         }
 
-        /// Compute key from tracking_id + lot_id (like Solana's PDA seeds)
-        fn make_key(tracking_id: &str, lot_id: &str) -> [u8; 32] {  // ← FIXED: Changed &String to &str
+        fn make_key(tracking_id: &str, lot_id: &str) -> [u8; 32] {  
             use ink::env::hash::{Blake2x256, HashOutput};
 
             let mut input = b"ledger".to_vec();
@@ -82,18 +75,16 @@ pub mod goldchain_sc {
             output
         }
 
-        /// Validate string length (max 256 chars like Solana)
-        fn validate_string_length(s: &str) -> Result<(), Error> {  // ← FIXED: Changed &String to &str
+  
+        fn validate_string_length(s: &str) -> Result<(), Error> {  
             if s.len() > 256 {
                 return Err(Error::StringTooLong);
             }
             Ok(())
         }
 
-        /// Initialize - sets admin (matches Solana's initialize function)
         #[ink(message)]
         pub fn initialize(&mut self) -> Result<(), Error> {
-            // Check if already initialized
             if self.config.is_some() {
                 return Err(Error::AlreadyInitialized);
             }
@@ -105,38 +96,31 @@ pub mod goldchain_sc {
             Ok(())
         }
 
-        /// Add ledger - only admin can call (matches Solana's add_ledger)
         #[ink(message)]
         pub fn add_ledger(
             &mut self,
             tracking_id: String,
             lot_id: String,
         ) -> Result<(), Error> {
-            // Check if initialized
+  
             let config = self.config.as_ref().ok_or(Error::NotInitialized)?;
 
-            // Validate string lengths (max 256 like Solana)
             Self::validate_string_length(&tracking_id)?;
             Self::validate_string_length(&lot_id)?;
 
-            // Check authorization (only admin)
             let caller = Self::env().caller();
             if caller != config.admin {
                 return Err(Error::UnauthorizedAuthority);
             }
 
-            // Create key (like Solana's PDA)
             let key = Self::make_key(&tracking_id, &lot_id);
 
-            // Check if ledger already exists (like Solana's PDA duplicate check)
-            if self.ledgers.contains(key) {  // ← FIXED: Removed unnecessary &
+            if self.ledgers.contains(key) {  
                 return Err(Error::LedgerAlreadyExists);
             }
 
-            // Get timestamp (unix timestamp like Solana)
-            let timestamp = Self::env().block_timestamp();  // ← FIXED: No conversion needed now
+            let timestamp = Self::env().block_timestamp();  
             
-            // Create and store ledger
             let ledger = Ledger {
                 tracking_id,
                 lot_id,
@@ -144,11 +128,19 @@ pub mod goldchain_sc {
             };
 
             self.ledgers.insert(key, &ledger);
+            self.ledger_keys.push(key);
 
             Ok(())
         }
 
-        /// Get ledger by tracking_id and lot_id
+        #[ink(message)]
+        pub fn get_all_ledgers(&self) -> Vec<Ledger> {
+            self.ledger_keys
+                .iter()
+                .filter_map(|key| self.ledgers.get(key))
+                .collect()
+        }
+
         #[ink(message)]
         pub fn get_ledger(
             &self,
@@ -156,10 +148,9 @@ pub mod goldchain_sc {
             lot_id: String,
         ) -> Option<Ledger> {
             let key = Self::make_key(&tracking_id, &lot_id);
-            self.ledgers.get(key)  // ← FIXED: Removed unnecessary &
+            self.ledgers.get(key) 
         }
 
-        /// Get config (admin address)
         #[ink(message)]
         pub fn get_config(&self) -> Option<Config> {
             self.config.clone()
@@ -176,7 +167,6 @@ pub mod goldchain_sc {
             let result = contract.initialize();
             assert!(result.is_ok());
 
-            // Cannot initialize twice
             let result2 = contract.initialize();
             assert_eq!(result2, Err(Error::AlreadyInitialized));
         }
@@ -198,12 +188,10 @@ pub mod goldchain_sc {
             let mut contract = GoldchainSc::new();
             contract.initialize().unwrap();
 
-            // Add first ledger
             contract
                 .add_ledger(String::from("TRACK001"), String::from("LOT001"))
                 .unwrap();
 
-            // Try to add duplicate - should fail
             let result =
                 contract.add_ledger(String::from("TRACK001"), String::from("LOT001"));
             assert_eq!(result, Err(Error::LedgerAlreadyExists));
@@ -215,11 +203,9 @@ pub mod goldchain_sc {
                 ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
             let mut contract = GoldchainSc::new();
 
-            // Alice initializes
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
             contract.initialize().unwrap();
 
-            // Bob tries to add ledger - should fail
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.bob);
             let result =
                 contract.add_ledger(String::from("TRACK001"), String::from("LOT001"));
@@ -231,7 +217,6 @@ pub mod goldchain_sc {
             let mut contract = GoldchainSc::new();
             contract.initialize().unwrap();
 
-            // Create string longer than 256 characters
             let long_string = "a".repeat(257);
 
             let result = contract.add_ledger(long_string, String::from("LOT001"));

@@ -376,18 +376,46 @@ export class PolkadotBlockchainClass implements BlockchainRepository {
     return config !== null;
   }
 
-  /**
-   * Get all ledgers (matches Solana's getAllLedgers)
-   * NOTE: In Polkadot/ink!, you need to query contract storage directly
-   * This is a placeholder - actual implementation depends on how you want to index
-   */
+  // Get all ledgers (new function to fetch all ledger entries)
   async getAllLedgers(): Promise<any[]> {
-    console.warn("⚠️  getAllLedgers: Not implemented in ink! contract");
-    console.warn("You need to either:");
-    console.warn("1. Add get_all_ledgers function to your ink! contract");
-    console.warn("2. Use an indexer like SubQuery");
-    return [];
+    if (!this.isConnected) {
+      throw new Error("❌ Not connected. Call initialize() first.");
+    }
+
+    try {
+      const gasLimit = this.api.registry.createType("WeightV2", {
+        refTime: 10000000000n,
+        proofSize: 131072n,
+      }) as WeightV2;
+
+      const { result, output } = await this.contract.query.getAllLedgers(
+        this.adminAccount.address,
+        { gasLimit, storageDepositLimit: null }
+      );
+
+      if (result.isErr) {
+        console.error("❌ Failed to fetch all ledgers:", result.asErr);
+        return [];
+      }
+
+      const ledgers = output?.toHuman() as any[];
+
+      if (!ledgers || ledgers.length === 0) {
+        return [];
+      }
+
+      // Convert to proper format
+      return ledgers.map((ledger: any) => ({
+        trackingId: ledger.trackingId,
+        lotId: ledger.lotId,
+        recordedAt: new Date(Number(ledger.recordedAt)),
+      }));
+    } catch (error) {
+      console.error("❌ Failed to fetch all ledgers:", error);
+      return [];
+    }
   }
+
 
   async disconnect(): Promise<void> {
     if (this.api) {

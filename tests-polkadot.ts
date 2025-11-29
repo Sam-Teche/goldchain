@@ -9,7 +9,7 @@ function timeoutPromise(ms: number) {
 
 async function testPolkadotBlockchain() {
   // Load environment variables from .env file
-  const env = new Environment();
+    const env = new Environment();
 
   const blockchain = new PolkadotBlockchainClass(env);
 

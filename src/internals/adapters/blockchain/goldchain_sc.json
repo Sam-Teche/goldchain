@@ -1,10 +1,10 @@
 {
   "source": {
-    "hash": "0x9bc671dbc799296fe55b89c0682f1333d83805081da52b7c516ee7f7838442a5",
+    "hash": "0x20bbc5159f92120a1d2ce37144e0ece67f1f08809d3d82df867d75456241100b",
     "language": "ink! 5.1.1",
     "compiler": "rustc 1.91.1",
     "build_info": {
-      "build_mode": "Release",
+      "build_mode": "Debug",
       "cargo_contract_version": "5.0.3",
       "rust_toolchain": "stable-x86_64-pc-windows-msvc",
       "wasm_opt_settings": {
@@ -17,7 +17,7 @@
     "name": "goldchain_sc",
     "version": "0.1.0",
     "authors": [
-      "Sam <Ogunrindesam@gmail.com>"
+      "Goldchain Team"
     ]
   },
   "image": null,
@@ -26,9 +26,7 @@
       {
         "args": [],
         "default": false,
-        "docs": [
-          "Constructor - creates empty contract (not initialized yet)"
-        ],
+        "docs": [],
         "label": "new",
         "payable": false,
         "returnType": {
@@ -36,7 +34,7 @@
             "ink_primitives",
             "ConstructorResult"
           ],
-          "type": 14
+          "type": 15
         },
         "selector": "0x9bae9d5e"
       }
@@ -53,25 +51,25 @@
         "displayName": [
           "Balance"
         ],
-        "type": 22
+        "type": 25
       },
       "blockNumber": {
         "displayName": [
           "BlockNumber"
         ],
-        "type": 24
+        "type": 27
       },
       "chainExtension": {
         "displayName": [
           "ChainExtension"
         ],
-        "type": 25
+        "type": 28
       },
       "hash": {
         "displayName": [
           "Hash"
         ],
-        "type": 23
+        "type": 26
       },
       "maxEventTopics": 4,
       "staticBufferSize": 16384,
@@ -88,7 +86,7 @@
         "ink",
         "LangError"
       ],
-      "type": 15
+      "type": 16
     },
     "messages": [
       {
@@ -105,7 +103,7 @@
             "ink",
             "MessageResult"
           ],
-          "type": 16
+          "type": 17
         },
         "selector": "0xf2f6dba3"
       },
@@ -142,9 +140,25 @@
             "ink",
             "MessageResult"
           ],
-          "type": 16
+          "type": 17
         },
         "selector": "0x60f84a35"
+      },
+      {
+        "args": [],
+        "default": false,
+        "docs": [],
+        "label": "get_all_ledgers",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 20
+        },
+        "selector": "0xddd7d68e"
       },
       {
         "args": [
@@ -179,7 +193,7 @@
             "ink",
             "MessageResult"
           ],
-          "type": 19
+          "type": 22
         },
         "selector": "0xbbc285d3"
       },
@@ -197,7 +211,7 @@
             "ink",
             "MessageResult"
           ],
-          "type": 21
+          "type": 24
         },
         "selector": "0xd0707806"
       }
@@ -289,13 +303,22 @@
                 }
               },
               "name": "ledgers"
+            },
+            {
+              "layout": {
+                "leaf": {
+                  "key": "0x00000000",
+                  "ty": 11
+                }
+              },
+              "name": "ledger_keys"
             }
           ],
           "name": "GoldchainSc"
         }
       },
       "root_key": "0x00000000",
-      "ty": 11
+      "ty": 12
     }
   },
   "types": [
@@ -480,17 +503,32 @@
       "id": 11,
       "type": {
         "def": {
+          "sequence": {
+            "type": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": {
+        "def": {
           "composite": {
             "fields": [
               {
                 "name": "config",
-                "type": 12,
+                "type": 13,
                 "typeName": "<Option<Config> as::ink::storage::traits::AutoStorableHint<::\nink::storage::traits::ManualKey<3896704015u32, ()>,>>::Type"
               },
               {
                 "name": "ledgers",
                 "type": 5,
                 "typeName": "<Mapping<[u8; 32], Ledger> as::ink::storage::traits::\nAutoStorableHint<::ink::storage::traits::ManualKey<980197240u32, ()\n>,>>::Type"
+              },
+              {
+                "name": "ledger_keys",
+                "type": 11,
+                "typeName": "<Vec<[u8; 32]> as::ink::storage::traits::AutoStorableHint<::ink\n::storage::traits::ManualKey<1075130968u32, ()>,>>::Type"
               }
             ]
           }
@@ -503,7 +541,7 @@
       }
     },
     {
-      "id": 12,
+      "id": 13,
       "type": {
         "def": {
           "variant": {
@@ -515,7 +553,7 @@
               {
                 "fields": [
                   {
-                    "type": 13
+                    "type": 14
                   }
                 ],
                 "index": 1,
@@ -527,7 +565,7 @@
         "params": [
           {
             "name": "T",
-            "type": 13
+            "type": 14
           }
         ],
         "path": [
@@ -536,7 +574,7 @@
       }
     },
     {
-      "id": 13,
+      "id": 14,
       "type": {
         "def": {
           "composite": {
@@ -557,7 +595,7 @@
       }
     },
     {
-      "id": 14,
+      "id": 15,
       "type": {
         "def": {
           "variant": {
@@ -574,7 +612,7 @@
               {
                 "fields": [
                   {
-                    "type": 15
+                    "type": 16
                   }
                 ],
                 "index": 1,
@@ -590,7 +628,7 @@
           },
           {
             "name": "E",
-            "type": 15
+            "type": 16
           }
         ],
         "path": [
@@ -599,7 +637,7 @@
       }
     },
     {
-      "id": 15,
+      "id": 16,
       "type": {
         "def": {
           "variant": {
@@ -618,7 +656,7 @@
       }
     },
     {
-      "id": 16,
+      "id": 17,
       "type": {
         "def": {
           "variant": {
@@ -626,7 +664,7 @@
               {
                 "fields": [
                   {
-                    "type": 17
+                    "type": 18
                   }
                 ],
                 "index": 0,
@@ -635,7 +673,7 @@
               {
                 "fields": [
                   {
-                    "type": 15
+                    "type": 16
                   }
                 ],
                 "index": 1,
@@ -647,11 +685,11 @@
         "params": [
           {
             "name": "T",
-            "type": 17
+            "type": 18
           },
           {
             "name": "E",
-            "type": 15
+            "type": 16
           }
         ],
         "path": [
@@ -660,7 +698,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 18,
       "type": {
         "def": {
           "variant": {
@@ -677,7 +715,7 @@
               {
                 "fields": [
                   {
-                    "type": 18
+                    "type": 19
                   }
                 ],
                 "index": 1,
@@ -693,7 +731,7 @@
           },
           {
             "name": "E",
-            "type": 18
+            "type": 19
           }
         ],
         "path": [
@@ -702,7 +740,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 19,
       "type": {
         "def": {
           "variant": {
@@ -738,7 +776,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 20,
       "type": {
         "def": {
           "variant": {
@@ -746,7 +784,7 @@
               {
                 "fields": [
                   {
-                    "type": 20
+                    "type": 21
                   }
                 ],
                 "index": 0,
@@ -755,7 +793,7 @@
               {
                 "fields": [
                   {
-                    "type": 15
+                    "type": 16
                   }
                 ],
                 "index": 1,
@@ -767,11 +805,11 @@
         "params": [
           {
             "name": "T",
-            "type": 20
+            "type": 21
           },
           {
             "name": "E",
-            "type": 15
+            "type": 16
           }
         ],
         "path": [
@@ -780,7 +818,59 @@
       }
     },
     {
-      "id": 20,
+      "id": 21,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 6
+          }
+        }
+      }
+    },
+    {
+      "id": 22,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 23
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 16
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 23
+          },
+          {
+            "name": "E",
+            "type": 16
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 23,
       "type": {
         "def": {
           "variant": {
@@ -813,7 +903,7 @@
       }
     },
     {
-      "id": 21,
+      "id": 24,
       "type": {
         "def": {
           "variant": {
@@ -821,7 +911,7 @@
               {
                 "fields": [
                   {
-                    "type": 12
+                    "type": 13
                   }
                 ],
                 "index": 0,
@@ -830,7 +920,7 @@
               {
                 "fields": [
                   {
-                    "type": 15
+                    "type": 16
                   }
                 ],
                 "index": 1,
@@ -842,11 +932,11 @@
         "params": [
           {
             "name": "T",
-            "type": 12
+            "type": 13
           },
           {
             "name": "E",
-            "type": 15
+            "type": 16
           }
         ],
         "path": [
@@ -855,7 +945,7 @@
       }
     },
     {
-      "id": 22,
+      "id": 25,
       "type": {
         "def": {
           "primitive": "u128"
@@ -863,7 +953,7 @@
       }
     },
     {
-      "id": 23,
+      "id": 26,
       "type": {
         "def": {
           "composite": {
@@ -883,7 +973,7 @@
       }
     },
     {
-      "id": 24,
+      "id": 27,
       "type": {
         "def": {
           "primitive": "u32"
@@ -891,7 +981,7 @@
       }
     },
     {
-      "id": 25,
+      "id": 28,
       "type": {
         "def": {
           "variant": {}
