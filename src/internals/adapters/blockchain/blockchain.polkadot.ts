@@ -303,23 +303,20 @@ export class PolkadotBlockchainClass implements BlockchainRepository {
         return null;
       }
 
-      const ledgerOption = output?.toHuman();
-
-      if (!ledgerOption || ledgerOption === "None") {
-        return null;
-      }
-
-      // Parse the ledger data
       const ledgerData = output?.toPrimitive() as any;
 
-      if (!ledgerData) {
+      // Check if wrapped in Ok/None
+      if (!ledgerData || !ledgerData.ok) {
         return null;
       }
 
+      // Extract from Ok wrapper
+      const ledger = ledgerData.ok;
+
       return {
-        trackingId: ledgerData.trackingId,
-        lotId: ledgerData.lotId,
-        recordedAt: new Date(Number(ledgerData.recordedAt)),
+        trackingId: ledger.trackingId,
+        lotId: ledger.lotId,
+        recordedAt: new Date(Number(ledger.recordedAt)),
       };
     } catch (error) {
       console.error("❌ Failed to fetch ledger:", error);
@@ -337,8 +334,8 @@ export class PolkadotBlockchainClass implements BlockchainRepository {
 
     try {
       const gasLimit = this.api.registry.createType("WeightV2", {
-        refTime: 10000000000n,
-        proofSize: 131072n,
+        refTime: 100000000000n,
+        proofSize: 524288n,
       }) as WeightV2;
 
       const { result, output } = await this.contract.query.getConfig(
@@ -351,16 +348,16 @@ export class PolkadotBlockchainClass implements BlockchainRepository {
         return null;
       }
 
-      const configOption = output?.toHuman();
+      const configData = output?.toHuman() as any;
 
-      if (!configOption || configOption === "None") {
+      // Check if it's wrapped in Ok/None
+      if (!configData || configData === "None" || !configData.Ok) {
         return null;
       }
 
-      const configData = output?.toPrimitive() as any;
-
+      // Extract from Ok wrapper
       return {
-        admin: configData.admin,
+        admin: configData.Ok.admin,
       };
     } catch (error) {
       console.error("❌ Failed to fetch config:", error);
@@ -398,9 +395,17 @@ export class PolkadotBlockchainClass implements BlockchainRepository {
         return [];
       }
 
-      const ledgers = output?.toHuman() as any[];
+      const ledgersData = output?.toPrimitive() as any;
 
-      if (!ledgers || ledgers.length === 0) {
+      // Check if wrapped in Ok
+      if (!ledgersData || !ledgersData.ok) {
+        return [];
+      }
+
+      // Extract array from Ok wrapper
+      const ledgers = ledgersData.ok;
+
+      if (!Array.isArray(ledgers) || ledgers.length === 0) {
         return [];
       }
 
@@ -415,7 +420,6 @@ export class PolkadotBlockchainClass implements BlockchainRepository {
       return [];
     }
   }
-
 
   async disconnect(): Promise<void> {
     if (this.api) {

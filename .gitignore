@@ -159,3 +159,10 @@ ecosystem.config.js # If it contains sensitive data or is environment-specific
 # .tmp/
 /.idea/
 /src/internals/ports/http/servicesBoilerplate.ts
+
+debug-all-ledgers.ts
+debug-config.ts
+debug-ledger.ts
+deploy-contract.ts
+init-contract.ts
+debug-getall-error.ts
